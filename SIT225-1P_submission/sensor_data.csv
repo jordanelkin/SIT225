@@ -1,0 +1,181 @@
+DateTime,Sensor,value_1,value_2
+19:08:14,Luminousity,63
+19:08:44,Luminousity,1023
+19:09:14,Luminousity,1023
+19:09:44,Luminousity,1023
+19:10:14,Luminousity,1023
+19:10:44,Luminousity,1023
+19:11:14,Luminousity,1023
+19:11:44,Luminousity,1023
+19:12:14,Luminousity,1023
+19:12:44,Luminousity,1023
+19:13:14,Luminousity,54
+19:13:44,Luminousity,55
+19:14:14,Luminousity,54
+19:14:44,Luminousity,40
+19:15:14,Luminousity,57
+19:15:44,Luminousity,1023
+19:16:14,Luminousity,1023
+19:16:44,Luminousity,1023
+19:17:14,Luminousity,1023
+19:17:44,Luminousity,1023
+19:18:14,Luminousity,1023
+19:18:44,Luminousity,1023
+19:19:14,Luminousity,1023
+19:19:44,Luminousity,1023
+19:20:14,Luminousity,1023
+19:20:44,Luminousity,52
+19:21:14,Luminousity,52
+19:21:44,Luminousity,38
+19:22:14,Luminousity,56
+19:22:44,Luminousity,54
+19:23:14,Luminousity,79
+19:23:44,Luminousity,55
+19:24:14,Luminousity,55
+19:24:45,Luminousity,1023
+19:25:15,Luminousity,1023
+19:25:45,Luminousity,1023
+19:26:15,Luminousity,1023
+19:26:45,Luminousity,1023
+19:27:15,Luminousity,1023
+19:27:45,Luminousity,1023
+19:28:15,Luminousity,1023
+19:28:45,Luminousity,1023
+19:29:15,Luminousity,1023
+19:29:45,Luminousity,1023
+19:30:15,Luminousity,1023
+19:30:45,Luminousity,1023
+19:31:15,Luminousity,54
+19:31:45,Luminousity,52
+19:32:15,Luminousity,51
+19:32:45,Luminousity,51
+19:33:15,Luminousity,53
+19:33:45,Luminousity,55
+19:34:15,Luminousity,55
+19:34:45,Luminousity,52
+19:35:15,Luminousity,51
+19:35:45,Luminousity,53
+19:36:15,Luminousity,1023
+19:36:45,Luminousity,1023
+19:37:15,Luminousity,1023
+19:37:45,Luminousity,1023
+19:08:14,DHT11,62.80,21.80
+19:08:44,DHT11,63.20,21.80
+19:09:14,DHT11,59.80,21.80
+19:09:44,DHT11,60.60,21.80
+19:10:14,DHT11,62.20,22.00
+19:10:44,DHT11,60.70,22.10
+19:11:14,DHT11,62.30,22.20
+19:11:44,DHT11,60.70,22.20
+19:12:14,DHT11,59.50,22.20
+19:12:44,DHT11,61.00,22.30
+19:13:14,DHT11,59.00,22.40
+19:13:44,DHT11,57.50,22.40
+19:14:14,DHT11,57.90,22.10
+19:14:44,DHT11,58.50,21.80
+19:15:14,DHT11,59.10,21.70
+19:15:44,DHT11,59.40,21.50
+19:16:14,DHT11,59.70,21.40
+19:16:44,DHT11,61.90,21.70
+19:17:14,DHT11,63.20,22.00
+19:17:44,DHT11,63.70,22.30
+19:18:14,DHT11,63.60,22.60
+19:18:44,DHT11,64.90,22.90
+19:19:14,DHT11,64.80,23.10
+19:19:44,DHT11,63.90,23.20
+19:20:14,DHT11,64.60,23.30
+19:20:44,DHT11,64.60,23.40
+19:21:14,DHT11,63.80,23.40
+19:21:44,DHT11,63.20,23.20
+19:22:14,DHT11,63.70,23.10
+19:22:44,DHT11,62.70,22.90
+19:23:14,DHT11,62.30,22.70
+19:23:44,DHT11,61.10,22.60
+19:24:15,DHT11,60.70,22.50
+19:24:45,DHT11,60.50,22.50
+19:25:15,DHT11,60.10,22.40
+19:25:45,DHT11,60.60,22.50
+19:26:15,DHT11,59.50,22.50
+19:26:45,DHT11,60.90,22.50
+19:27:15,DHT11,61.70,22.60
+19:27:45,DHT11,62.00,22.70
+19:28:15,DHT11,62.70,22.80
+19:28:45,DHT11,63.90,23.00
+19:29:15,DHT11,65.20,23.10
+19:29:45,DHT11,65.70,23.30
+19:30:15,DHT11,66.50,23.50
+19:30:45,DHT11,67.00,23.60
+19:31:15,DHT11,66.20,23.60
+19:31:45,DHT11,63.80,23.50
+19:32:15,DHT11,63.80,23.30
+19:32:45,DHT11,63.10,23.20
+19:33:15,DHT11,62.10,23.00
+19:33:45,DHT11,61.70,22.90
+19:34:15,DHT11,61.20,22.70
+19:34:45,DHT11,60.90,22.60
+19:35:15,DHT11,60.40,22.50
+19:35:45,DHT11,60.10,22.50
+19:36:15,DHT11,60.30,22.40
+19:36:45,DHT11,59.70,22.50
+19:37:15,DHT11,61.10,22.60
+19:37:45,DHT11,61.70,22.90
+19:08:14,PIR,Motion Detected
+19:08:44,PIR,Motion Detected
+19:09:14,PIR,No Motion Detected
+19:09:44,PIR,No Motion Detected
+19:10:14,PIR,No Motion Detected
+19:10:44,PIR,No Motion Detected
+19:11:14,PIR,No Motion Detected
+19:11:44,PIR,Motion Detected
+19:12:14,PIR,Motion Detected
+19:12:44,PIR,No Motion Detected
+19:13:14,PIR,No Motion Detected
+19:13:44,PIR,No Motion Detected
+19:14:14,PIR,No Motion Detected
+19:14:44,PIR,No Motion Detected
+19:15:14,PIR,No Motion Detected
+19:15:44,PIR,Motion Detected
+19:16:14,PIR,Motion Detected
+19:16:44,PIR,No Motion Detected
+19:17:14,PIR,No Motion Detected
+19:17:44,PIR,No Motion Detected
+19:18:14,PIR,No Motion Detected
+19:18:44,PIR,Motion Detected
+19:19:14,PIR,No Motion Detected
+19:19:44,PIR,No Motion Detected
+19:20:14,PIR,Motion Detected
+19:20:44,PIR,No Motion Detected
+19:21:14,PIR,No Motion Detected
+19:21:44,PIR,No Motion Detected
+19:22:14,PIR,No Motion Detected
+19:22:44,PIR,No Motion Detected
+19:23:14,PIR,No Motion Detected
+19:23:44,PIR,No Motion Detected
+19:24:15,PIR,No Motion Detected
+19:24:45,PIR,No Motion Detected
+19:25:15,PIR,No Motion Detected
+19:25:45,PIR,No Motion Detected
+19:26:15,PIR,No Motion Detected
+19:26:45,PIR,Motion Detected
+19:27:15,PIR,No Motion Detected
+19:27:45,PIR,Motion Detected
+19:28:15,PIR,No Motion Detected
+19:28:45,PIR,Motion Detected
+19:29:15,PIR,No Motion Detected
+19:29:45,PIR,No Motion Detected
+19:30:15,PIR,No Motion Detected
+19:30:45,PIR,No Motion Detected
+19:31:15,PIR,No Motion Detected
+19:31:45,PIR,No Motion Detected
+19:32:15,PIR,No Motion Detected
+19:32:45,PIR,No Motion Detected
+19:33:15,PIR,No Motion Detected
+19:33:45,PIR,No Motion Detected
+19:34:15,PIR,No Motion Detected
+19:34:45,PIR,No Motion Detected
+19:35:15,PIR,No Motion Detected
+19:35:45,PIR,No Motion Detected
+19:36:15,PIR,No Motion Detected
+19:36:45,PIR,Motion Detected
+19:37:15,PIR,No Motion Detected
+19:37:45,PIR,No Motion Detected
