@@ -10,6 +10,7 @@ import pandas as pd
 from dash import Dash, html, dash_table, dcc, callback, Output, Input,ctx,State
 import plotly.express as px
 import threading
+import types
 
 
 #class to handle handle and store data from accelerometers
@@ -239,7 +240,7 @@ def draw_accelerometer_data():
 
     plot = threading.Thread(target=app.run)
     plot.start()
-
+''''
 def main():
     DEVICE_ID = ""
     SECRET_KEY = ""
@@ -263,6 +264,110 @@ def main():
     draw_accelerometer_data() #transform for api usage
 
     client.run_client()
+'''
+
+class GenericCloudObject:
+    def __init__(self):
+        self.flags_names = []
+
+def cloud_streaming_graph(cloud_credentials_file:str,cloud_variables: list):
+
+    generic_cloud_object = GenericCloudObject()
+
+    def make_gettr(variable_name):
+        def getter(self):
+            return getattr(self,variable_name)
+        return getter
+
+    def make_settr(variable_name):
+        def setter(self,value):
+            setattr(self,variable_name,value)
+        return setter
+
+    def make_serialiser(variable_name):
+        def serialise(self):
+            if os.path.isfile(f'{variable_name}.csv'):
+                 with open(f'{variable_name}.csv','a+') as file:
+                     file.write(f'{datetime.now().isoformat()},{getattr(generic_cloud_object,f'get_{variable_name}')()}\n')
+            else:
+                with open(f'{variable_name}.csv','w') as file:
+                    file.write(f'TimeStamp,{variable_name}\n')
+                    file.write(f'{datetime.now().isoformat()},{getattr(generic_cloud_object,f'get_{variable_name}')()}\n')
+        return serialise
+
+    DEVICE_ID = ""
+    SECRET_KEY = ""
+
+    with open(cloud_credentials_file,"r") as fp:
+        keys = []
+        for line in fp:
+            keys.append(line)
+        DEVICE_ID = keys[0].strip('\n')
+        SECRET_KEY = keys[1].strip('\n')
+
+    def create_callback_function(cloud_variable_name: str):
+        def callback_function(client, value):
+            print(f"New {cloud_variable_name} value: {value}")
+            set_new_value_func = getattr(generic_cloud_object,f'set_{cloud_variable_name}')
+            set_new_value_func(value)
+            save_func = getattr(generic_cloud_object,f'save_{cloud_variable_name}')
+            save_func()
+        callback_function.__name__ = f'on_change_{cloud_variable_name}'
+        return callback_function
+
+    def create_cloud_variable(cloud_variable_name):
+        cloud_variable = cloud_variable_name
+        cloud_variable_value = 0.0
+
+        setattr(generic_cloud_object,cloud_variable,cloud_variable_value)
+
+        cloud_variable_received_data_flag = f'received_{cloud_variable}'
+        cloud_variable_received_data_flag_value = False
+
+        getter_method_name = f'get_{cloud_variable}'
+        getter_method = make_gettr(cloud_variable)
+
+        setattr(generic_cloud_object,getter_method_name,types.MethodType(getter_method,generic_cloud_object))
+
+        setter_method_name = f'set_{cloud_variable}'
+        setter_method = make_settr(cloud_variable)
+
+        setattr(generic_cloud_object,setter_method_name,types.MethodType(setter_method,generic_cloud_object))
+
+        serialiser_method_name = f'save_{cloud_variable}'
+        serialiser_method = make_serialiser(cloud_variable)
+
+        setattr(generic_cloud_object,serialiser_method_name,types.MethodType(serialiser_method,generic_cloud_object))
+
+
+
+    client = ArdinoCloud(DEVICE_ID,SECRET_KEY)
+    client.setup_client()
+
+
+    #TODO setup for loop to automate with list of variables
+    accel_x = create_cloud_variable('accel_x')
+    on_change_x = create_callback_function('accel_x')
+
+
+    accel_y = create_cloud_variable('accel_y')
+    on_change_y = create_callback_function('accel_y')
+
+
+    accel_z = create_cloud_variable('accel_z')
+    on_change_z = create_callback_function('accel_z')
+
+    client.add_callback_function(on_change_x)
+    client.add_callback_function(on_change_y)
+    client.add_callback_function(on_change_z)
+
+    # Cloud variable names must be passed in the list in the order the functions are added
+    client.register_callbacks(cloud_variables)
+
+    #draw_accelerometer_data() #transform for api usage
+
+    client.run_client()
+
 
 if __name__ == "__main__":
-    main()
+    cloud_streaming_graph('key.txt',['accel_x','accel_y','accel_z'])
