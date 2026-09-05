@@ -240,37 +240,12 @@ def draw_accelerometer_data():
 
     plot = threading.Thread(target=app.run)
     plot.start()
-''''
-def main():
-    DEVICE_ID = ""
-    SECRET_KEY = ""
-
-    with open("key.txt","r") as fp:
-        keys = []
-        for line in fp:
-            keys.append(line)
-        DEVICE_ID = keys[0].strip('\n')
-        SECRET_KEY = keys[1].strip('\n')
-
-    client = ArdinoCloud(DEVICE_ID,SECRET_KEY)
-    client.setup_client()
-    client.add_callback_function(on_x_changed)
-    client.add_callback_function(on_y_changed)
-    client.add_callback_function(on_z_changed)
-
-    # Cloud variable names must be passed in the list in the order the functions are added
-    client.register_callbacks(['accel_x','accel_y','accel_z'])
-
-    draw_accelerometer_data() #transform for api usage
-
-    client.run_client()
-'''
 
 class GenericCloudObject:
     def __init__(self):
         self.flags_names = []
 
-def cloud_streaming_graph(cloud_credentials_file:str,cloud_variables: list):
+def cloud_streaming_graph(cloud_credentials_file:str,cloud_variables: list,write_combined=False):
 
     generic_cloud_object = GenericCloudObject()
 
@@ -282,9 +257,31 @@ def cloud_streaming_graph(cloud_credentials_file:str,cloud_variables: list):
     def make_settr(variable_name):
         def setter(self,value):
             setattr(self,variable_name,value)
+            setattr(generic_cloud_object,f'received_{variable_name}',True)
         return setter
 
-    def make_serialiser(variable_name):
+    def make_serialiser(variable_name,write_combined=False):
+        if write_combined:
+            def combined_serialise(self,variable_list):
+                if os.path.isfile(f'combined.csv'):
+                    #loop checks if all the received object flags are true
+                    for variable_name in variable_list:
+                        if getattr(generic_cloud_object,f'received_{variable_name}') is not True:
+                            return
+
+                    with open(f'combined.csv','a+') as file:
+                        file.write(f'{datetime.now().isoformat()}')
+                        for variable_name in variable_list:
+                            file.write(f',{getattr(generic_cloud_object,f'get_{variable_name}')()}')
+                        file.write('\n')
+                else:
+                    with open(f'combined.csv','w') as file:
+                        file.write(f'TimeStamp')
+                        for variable_name in variable_list:
+                            file.write(f',{variable_name}')
+                        file.write('\n')
+            return combined_serialise
+
         def serialise(self):
             if os.path.isfile(f'{variable_name}.csv'):
                  with open(f'{variable_name}.csv','a+') as file:
@@ -305,13 +302,16 @@ def cloud_streaming_graph(cloud_credentials_file:str,cloud_variables: list):
         DEVICE_ID = keys[0].strip('\n')
         SECRET_KEY = keys[1].strip('\n')
 
-    def create_callback_function(cloud_variable_name: str):
+    def create_callback_function(cloud_variable_name: str,combined_write=False):
         def callback_function(client, value):
             print(f"New {cloud_variable_name} value: {value}")
             set_new_value_func = getattr(generic_cloud_object,f'set_{cloud_variable_name}')
             set_new_value_func(value)
             save_func = getattr(generic_cloud_object,f'save_{cloud_variable_name}')
             save_func()
+            if combined_write is True:
+                combined_writer = make_serialiser(None,True)(self=None,variable_list=['accel_x','accel_y','accel_z'])
+
         callback_function.__name__ = f'on_change_{cloud_variable_name}'
         return callback_function
 
@@ -323,6 +323,9 @@ def cloud_streaming_graph(cloud_credentials_file:str,cloud_variables: list):
 
         cloud_variable_received_data_flag = f'received_{cloud_variable}'
         cloud_variable_received_data_flag_value = False
+
+        setattr(generic_cloud_object,cloud_variable_received_data_flag,cloud_variable_received_data_flag_value)
+
 
         getter_method_name = f'get_{cloud_variable}'
         getter_method = make_gettr(cloud_variable)
@@ -345,23 +348,16 @@ def cloud_streaming_graph(cloud_credentials_file:str,cloud_variables: list):
     client.setup_client()
 
 
-    #TODO setup for loop to automate with list of variables
-    accel_x = create_cloud_variable('accel_x')
-    on_change_x = create_callback_function('accel_x')
+    # sets up the cloud variables and injects them into the generic object
+    # creates callback functions to pass back the data from the arduino cloud based on the list of cloud
+    # variable names given these functions are stored in the ArdinoCloud object
+    for variable in cloud_variables:
+       local_variable = create_cloud_variable(variable)
+       func_ptr = create_callback_function(variable,write_combined)
+       client.add_callback_function(func_ptr)
 
 
-    accel_y = create_cloud_variable('accel_y')
-    on_change_y = create_callback_function('accel_y')
-
-
-    accel_z = create_cloud_variable('accel_z')
-    on_change_z = create_callback_function('accel_z')
-
-    client.add_callback_function(on_change_x)
-    client.add_callback_function(on_change_y)
-    client.add_callback_function(on_change_z)
-
-    # Cloud variable names must be passed in the list in the order the functions are added
+    # Registers the created callback functions
     client.register_callbacks(cloud_variables)
 
     #draw_accelerometer_data() #transform for api usage
@@ -370,4 +366,4 @@ def cloud_streaming_graph(cloud_credentials_file:str,cloud_variables: list):
 
 
 if __name__ == "__main__":
-    cloud_streaming_graph('key.txt',['accel_x','accel_y','accel_z'])
+    cloud_streaming_graph('key.txt',['accel_x','accel_y','accel_z'],write_combined=True)
