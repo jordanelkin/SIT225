@@ -1,90 +1,19 @@
-import sys
-import traceback
-import random
 from arduino_iot_cloud import ArduinoCloudClient
-import asyncio
 from datetime import datetime
 
 import os
 import pandas as pd
-from dash import Dash, html, dash_table, dcc, callback, Output, Input,ctx,State
+from dash import Dash, html, dash_table, dcc, callback, Output, Input
 import plotly.express as px
 import threading
 import types
+import time
+
+#global lock to ensure shared resources cannot be accessed simultaneously
+data_lock = threading.Lock()
 
 
-#class to handle handle and store data from accelerometers
-#Capable of writing either all data or parts to a csv file
-class Accelerometer:
-    def __init__(self,write_combined=False,write_combined_file_path=None):
-        self.y_value = 0.0
-        self.x_value = 0.0
-        self.z_value = 0.0
-        self.write_combined = write_combined
-        self.write_combined_file_path = write_combined_file_path
-
-        self.received_y_value = False
-        self.received_x_value = False
-        self.received_z_value = False
-
-    def get_x_value(self):
-        return self.x_value
-
-    def set_x_value(self,x):
-        self.x_value = x
-        self.received_x_value = True
-
-        if self.write_combined:
-            self.save_combined()
-
-    def get_y_value(self):
-        return self.y_value
-
-    def set_y_value(self,y):
-        self.y_value = y
-        self.received_y_value = True
-
-        if self.write_combined:
-            self.save_combined()
-
-    def get_z_value(self):
-        return self.z_value
-
-    def set_z_value(self,z):
-        self.z_value = z
-        self.received_z_value = True
-
-        if self.write_combined:
-            self.save_combined()
-
-    def save_value(self,path,value,time,value_name):
-        if os.path.isfile(path):
-            with open(path,'a+') as file:
-                file.write(f'{time},{value}\n')
-        else:
-            with open(path,'w') as file:
-                file.write(f'TimeStamp,{value_name}\n')
-                file.write(f'{time},{value}\n')
-
-
-    def save_combined(self):
-        if not os.path.isfile(self.write_combined_file_path):
-            with open(self.write_combined_file_path,'w') as file:
-                file.write(f"TimeStamp, X Value, Y Value, Z Value\n")
-
-        if self.received_x_value and self.received_y_value and self.received_z_value:
-            with open(self.write_combined_file_path,'a+') as file:
-                file.write(f"{datetime.now().isoformat()},{self.x_value},{self.y_value},{self.z_value}\n")
-
-            self.received_x_value = False
-            self.received_y_value = False
-            self.received_z_value = False
-
-    def draw(self):
-        pass
-
-
-class ArdinoCloud:
+class ArduinoCloud:
     def __init__(self,device_id,key):
         self.device_id = device_id
         self.key = key
@@ -114,53 +43,31 @@ class ArdinoCloud:
         else:
             print("Error Function Already added")
 
-    def remove_callback_function(self):
-        if name in self.callback_functions.keys():
-            del self.callback_functions[name]
-        else:
-            print("Error no such function")
-
     def get_callback_functions(self):
         return self.callback_functions
 
     def run_client(self):
        self.arduino_client.start()
 
-global  accelerometer_data
-accelerometer_data = Accelerometer(write_combined=True,write_combined_file_path='combined.csv')
-
-
-# Callback functions for on change events.
-def on_x_changed(client, value):
-    print(f"New x value: {value}")
-    accelerometer_data.set_x_value(value)
-    accelerometer_data.save_value('accel_x.csv',accelerometer_data.get_x_value(),datetime.now().isoformat(),'X Value')
-
-def on_y_changed(client,value):
-    print(f"New y value: {value}")
-    accelerometer_data.set_y_value(value)
-    accelerometer_data.save_value('accel_y.csv',accelerometer_data.get_y_value(),datetime.now().isoformat(),'Y Value')
-
-def on_z_changed(client,value):
-     print(f"New z value: {value}")
-     accelerometer_data.set_z_value(value)
-     accelerometer_data.save_value('accel_z.csv',accelerometer_data.get_z_value(),datetime.now().isoformat(),'Z Value')
-
-
-def draw_accelerometer_data():
+def draw_data(cloud_variable_list:list,graph_refresh_interval:int,graph_title:str,data_store:str,sensor_data_name:str):
     app = Dash()
 
+    #block until data_store has been created
+    while not os.path.isfile(data_store):
+        time.sleep(1)
+
     # Initial load
-    df = pd.read_csv('combined.csv')
+    with data_lock:
+        df = pd.read_csv(data_store)
 
     app.layout = [
-        html.Div(children='My First App with Data, Graph, and Controls'),
+        html.Div(children=graph_title, style={"textAlign":"center"}),
         html.Hr(),
 
         dcc.RadioItems(
-            options=[' X Value', ' Y Value', ' Z Value'],
+            options=cloud_variable_list,
             inline=True,
-            value=' X Value',
+            value=cloud_variable_list[0],
             id='controls-and-radio-item'
         ),
 
@@ -187,7 +94,7 @@ def draw_accelerometer_data():
         ),
         dcc.Interval(
         id='auto-refresh',
-        interval=10000,  # milliseconds
+        interval=graph_refresh_interval,  # milliseconds
         n_intervals=0
 )
     ]
@@ -202,8 +109,8 @@ def draw_accelerometer_data():
     def reload_data(n_intervals,n_clicks):
 
         print("Reloading file")
-
-        df = pd.read_csv('combined.csv')
+        with data_lock:
+            df = pd.read_csv(data_store)
 
         return df.to_dict('records')
 
@@ -222,8 +129,11 @@ def draw_accelerometer_data():
             df,
             x='TimeStamp',
             y=col_chosen,
-            markers=True
+            markers=True,
+            title=f' Graph of {sensor_data_name} - {col_chosen}'
         )
+
+        fig.update_layout(title_x=0.5)
 
         return fig
 
@@ -236,71 +146,67 @@ def draw_accelerometer_data():
     def update_table(stored_data):
 
         return stored_data
-
-
-    plot = threading.Thread(target=app.run)
-    plot.start()
+    app.run()
 
 class GenericCloudObject:
     def __init__(self):
-        self.flags_names = []
+        pass
 
-def cloud_streaming_graph(cloud_credentials_file:str,cloud_variables: list,write_combined=False):
+def cloud_streaming_graph(cloud_credentials_file:str,cloud_variables: list,write_combined=False, graph_refresh_interval= 500,graph_title="Default Graph of Data from Arduino Cloud",data_store='combined.csv',sensor_data_name='accelerometer'):
 
     generic_cloud_object = GenericCloudObject()
 
-    def make_gettr(variable_name):
+    def make_getter(variable_name):
         def getter(self):
             return getattr(self,variable_name)
         return getter
 
-    def make_settr(variable_name):
+    def make_setter(variable_name):
         def setter(self,value):
             setattr(self,variable_name,value)
-            setattr(generic_cloud_object,f'received_{variable_name}',True)
+            setattr(self,f'received_{variable_name}',True)
         return setter
 
     def make_serialiser(variable_name,write_combined=False):
         if write_combined:
             def combined_serialise(self,variable_list):
-                if os.path.isfile(f'combined.csv'):
-                    #loop checks if all the received object flags are true
-                    for variable_name in variable_list:
-                        if getattr(generic_cloud_object,f'received_{variable_name}') is not True:
-                            return
+                with data_lock:
+                    if os.path.isfile(data_store):
+                        #loop checks if all the received object flags are true
+                        for variable_name in variable_list:
+                            if getattr(generic_cloud_object,f'received_{variable_name}') is not True:
+                                return
+                        with open(data_store,'a+') as file:
+                            file.write(f'{datetime.now().isoformat()}')
+                            for variable_name in variable_list:
+                                file.write(f',{getattr(generic_cloud_object,f'get_{variable_name}')()}')
+                            file.write('\n')
 
-                    with open(f'combined.csv','a+') as file:
-                        file.write(f'{datetime.now().isoformat()}')
                         for variable_name in variable_list:
-                            file.write(f',{getattr(generic_cloud_object,f'get_{variable_name}')()}')
-                        file.write('\n')
-                else:
-                    with open(f'combined.csv','w') as file:
-                        file.write(f'TimeStamp')
-                        for variable_name in variable_list:
-                            file.write(f',{variable_name}')
-                        file.write('\n')
+                            setattr(generic_cloud_object,f'received_{variable_name}',False)
+
+                    # Create the combined CSV with headers only.
+                    # The first complete sample is intentionally discarded
+                    # to avoid recording transient/junk startup data.
+                    else:
+                        with open(data_store,'w') as file:
+                            file.write(f'TimeStamp')
+                            for variable_name in variable_list:
+                                file.write(f',{variable_name}')
+                            file.write('\n')
             return combined_serialise
 
         def serialise(self):
-            if os.path.isfile(f'{variable_name}.csv'):
-                 with open(f'{variable_name}.csv','a+') as file:
-                     file.write(f'{datetime.now().isoformat()},{getattr(generic_cloud_object,f'get_{variable_name}')()}\n')
-            else:
-                with open(f'{variable_name}.csv','w') as file:
-                    file.write(f'TimeStamp,{variable_name}\n')
-                    file.write(f'{datetime.now().isoformat()},{getattr(generic_cloud_object,f'get_{variable_name}')()}\n')
+            with data_lock:
+                if os.path.isfile(f'{variable_name}.csv'):
+                    with open(f'{variable_name}.csv','a+') as file:
+                        file.write(f'{datetime.now().isoformat()},{getattr(generic_cloud_object,f'get_{variable_name}')()}\n')
+                else:
+                    with open(f'{variable_name}.csv','w') as file:
+                        file.write(f'TimeStamp,{variable_name}\n')
+                        file.write(f'{datetime.now().isoformat()},{getattr(generic_cloud_object,f'get_{variable_name}')()}\n')
         return serialise
 
-    DEVICE_ID = ""
-    SECRET_KEY = ""
-
-    with open(cloud_credentials_file,"r") as fp:
-        keys = []
-        for line in fp:
-            keys.append(line)
-        DEVICE_ID = keys[0].strip('\n')
-        SECRET_KEY = keys[1].strip('\n')
 
     def create_callback_function(cloud_variable_name: str,combined_write=False):
         def callback_function(client, value):
@@ -310,7 +216,7 @@ def cloud_streaming_graph(cloud_credentials_file:str,cloud_variables: list,write
             save_func = getattr(generic_cloud_object,f'save_{cloud_variable_name}')
             save_func()
             if combined_write is True:
-                combined_writer = make_serialiser(None,True)(self=None,variable_list=['accel_x','accel_y','accel_z'])
+                make_serialiser(None,True)(self=None,variable_list=cloud_variables)
 
         callback_function.__name__ = f'on_change_{cloud_variable_name}'
         return callback_function
@@ -328,12 +234,12 @@ def cloud_streaming_graph(cloud_credentials_file:str,cloud_variables: list,write
 
 
         getter_method_name = f'get_{cloud_variable}'
-        getter_method = make_gettr(cloud_variable)
+        getter_method = make_getter(cloud_variable)
 
         setattr(generic_cloud_object,getter_method_name,types.MethodType(getter_method,generic_cloud_object))
 
         setter_method_name = f'set_{cloud_variable}'
-        setter_method = make_settr(cloud_variable)
+        setter_method = make_setter(cloud_variable)
 
         setattr(generic_cloud_object,setter_method_name,types.MethodType(setter_method,generic_cloud_object))
 
@@ -342,17 +248,26 @@ def cloud_streaming_graph(cloud_credentials_file:str,cloud_variables: list,write
 
         setattr(generic_cloud_object,serialiser_method_name,types.MethodType(serialiser_method,generic_cloud_object))
 
+    DEVICE_ID = ""
+    SECRET_KEY = ""
+
+    with open(cloud_credentials_file,"r") as fp:
+        keys = []
+        for line in fp:
+            keys.append(line)
+        DEVICE_ID = keys[0].strip('\n')
+        SECRET_KEY = keys[1].strip('\n')
 
 
-    client = ArdinoCloud(DEVICE_ID,SECRET_KEY)
+    client = ArduinoCloud(DEVICE_ID,SECRET_KEY)
     client.setup_client()
 
 
     # sets up the cloud variables and injects them into the generic object
     # creates callback functions to pass back the data from the arduino cloud based on the list of cloud
-    # variable names given these functions are stored in the ArdinoCloud object
+    # variable names given these functions are stored in the ArduinoCloud object
     for variable in cloud_variables:
-       local_variable = create_cloud_variable(variable)
+       create_cloud_variable(variable)
        func_ptr = create_callback_function(variable,write_combined)
        client.add_callback_function(func_ptr)
 
@@ -360,7 +275,9 @@ def cloud_streaming_graph(cloud_credentials_file:str,cloud_variables: list,write
     # Registers the created callback functions
     client.register_callbacks(cloud_variables)
 
-    #draw_accelerometer_data() #transform for api usage
+    plot = threading.Thread(target=draw_data,args=(cloud_variables,graph_refresh_interval,graph_title,data_store,sensor_data_name))
+
+    plot.start()
 
     client.run_client()
 
