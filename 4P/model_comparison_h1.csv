@@ -1,0 +1,6 @@
+Model,Accuracy
+Light only,0.6353591160220995
+PIR only,0.4696132596685083
+Temperature only,0.04419889502762431
+Humidity only,0.0
+All sensors,0.0

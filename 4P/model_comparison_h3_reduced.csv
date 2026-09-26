@@ -1,0 +1,11 @@
+Sensors,Accuracy
+PIR + Light,0.6353591160220995
+Temperature + Light,0.04419889502762431
+Temperature + PIR + Light,0.04419889502762431
+Temperature + PIR,0.03314917127071823
+Humidity + PIR,0.0
+Humidity + Temperature,0.0
+Humidity + Light,0.0
+Humidity + Temperature + PIR,0.0
+Humidity + Temperature + Light,0.0
+Humidity + PIR + Light,0.0
